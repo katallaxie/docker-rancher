@@ -1,0 +1,58 @@
+version: "2"
+services:
+  db_data:
+    image: mysql:5.7
+    command: "echo 'data-only container for MySQL'"
+  db:
+    build:
+      context: .
+      dockerfile: dockerfile.db
+    volumes_from:
+      - db_data
+    restart: always
+    depends_on:
+      - db_data
+      - nexus_oss
+    environment:
+      MYSQL_ROOT_PASSWORD: cattle
+      MYSQL_DATABASE: cattle
+      MYSQL_USER: cattle
+      MYSQL_PASSWORD: cattle
+  rancher_server:
+    depends_on:
+      - db
+    links:
+      - db
+    image: rancher/server
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      CATTLE_DB_CATTLE_MYSQL_HOST: db
+      CATTLE_DB_CATTLE_MYSQL_PORT: 3306
+      CATTLE_DB_CATTLE_MYSQL_NAME: cattle
+      CATTLE_DB_CATTLE_USERNAME: cattle
+      CATTLE_DB_CATTLE_PASSWORD: cattle
+  rancher_agent:
+    depends_on:
+      - rancher_server
+    links:
+      - rancher_server
+    image: rancher/agent
+    environment:
+      CATTLE_AGENT_IP: 192.168.99.100
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    privileged: true
+    command: "http://192.168.99.100:8080/v1/scripts/D014BAB3D4E72CC0FFFC:1464073200000:Auiz8TJ9m2LeCAfIIDhOALAyE0"
+  nexus_data:
+    image: sonatype/nexus3
+    command: "echo 'data-only container for Nexus'"
+  nexus_oss:
+    depends_on:
+      - nexus_data
+    image: sonatype/nexus3
+    ports:
+      - "8081:8081"
+    volumes_from:
+      - nexus_data
