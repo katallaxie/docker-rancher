@@ -1,4 +1,4 @@
-# docker-ranger
+# docker-rancher
 
 > A proof-of-concept for a containerized development cloud
 
